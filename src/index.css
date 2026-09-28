@@ -1,0 +1,226 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-solid: var(--surface-solid);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-inverse: var(--inverse);
+  --color-on-inverse: var(--on-inverse);
+  --color-volt: var(--volt);
+  --color-volt-strong: var(--volt-strong);
+  --color-volt-soft: var(--volt-soft);
+  --color-volt-ink: var(--volt-ink);
+  --color-route: var(--route);
+  --color-route-soft: var(--route-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-danger: var(--danger);
+}
+
+:root {
+  --bg: #eef0ec;
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-solid: #ffffff;
+  --surface-2: #f3f4f6;
+  --surface-3: #e9ebef;
+  --line: rgba(15, 23, 42, 0.08);
+  --ink: #0b0d12;
+  --ink-2: #2a2f3a;
+  --muted: #6b7280;
+  --inverse: #0b0d12;
+  --on-inverse: #ffffff;
+  --volt: #16d39a;
+  --volt-strong: #0a9c70;
+  --volt-soft: rgba(22, 211, 154, 0.14);
+  --volt-ink: #033626;
+  --route: #3b6cff;
+  --route-soft: rgba(59, 108, 255, 0.14);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+  --danger: #ef4444;
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 10px 30px -12px rgba(15, 23, 42, 0.25), 0 2px 6px -2px rgba(15, 23, 42, 0.08);
+
+  /* map */
+  --map-land: #eceee8;
+  --map-urban: #e4e6df;
+  --map-building: #d8dad2;
+  --map-building-alt: #d1d4cb;
+  --map-building-tall: #c9ccd6;
+  --map-building-shadow: rgba(60, 64, 60, 0.16);
+  --map-park: #cfe7c8;
+  --map-park-line: #b7d9ae;
+  --map-beach: #f1e6c8;
+  --map-water: #a9d0ee;
+  --map-water-deep: #8fbfe6;
+  --map-road: #ffffff;
+  --map-road-casing: #d3d6d0;
+  --map-highway: #ffffff;
+  --map-highway-casing: #c2c7d0;
+  --map-highway-line: #fbd98a;
+  --map-local: #fbfbf9;
+  --map-label: #5b6270;
+  --map-label-halo: rgba(236, 238, 232, 0.92);
+  --map-district: #8a909b;
+  --map-airport: #e1e3e7;
+  --map-runway: #c3c8d0;
+}
+
+.dark {
+  --bg: #0a0c10;
+  --surface: rgba(20, 23, 29, 0.84);
+  --surface-solid: #14171d;
+  --surface-2: #1b1f27;
+  --surface-3: #242934;
+  --line: rgba(255, 255, 255, 0.08);
+  --ink: #f3f5f8;
+  --ink-2: #c9ced8;
+  --muted: #8b93a1;
+  --inverse: #f3f5f8;
+  --on-inverse: #0b0d12;
+  --volt: #2ef2b5;
+  --volt-strong: #2ef2b5;
+  --volt-soft: rgba(46, 242, 181, 0.13);
+  --volt-ink: #022a1d;
+  --route: #5b86ff;
+  --route-soft: rgba(91, 134, 255, 0.18);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.7), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+
+  --map-land: #0f1216;
+  --map-urban: #13171c;
+  --map-building: #1b2027;
+  --map-building-alt: #1e242c;
+  --map-building-tall: #232a35;
+  --map-building-shadow: rgba(0, 0, 0, 0.45);
+  --map-park: #10251a;
+  --map-park-line: #16311f;
+  --map-beach: #221f17;
+  --map-water: #0a1a29;
+  --map-water-deep: #07131f;
+  --map-road: #242a33;
+  --map-road-casing: #0b0d11;
+  --map-highway: #2f3744;
+  --map-highway-casing: #0a0c10;
+  --map-highway-line: rgba(251, 217, 138, 0.35);
+  --map-local: #1a1f26;
+  --map-label: #818a99;
+  --map-label-halo: rgba(15, 18, 22, 0.9);
+  --map-district: #5d6573;
+  --map-airport: #161a20;
+  --map-runway: #252b35;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+
+.card {
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.text-gradient {
+  background: linear-gradient(100deg, var(--volt) 0%, var(--route) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-volt-gradient {
+  background: linear-gradient(120deg, #2ef2b5 0%, #16d39a 45%, #3b9bff 100%);
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: shimmer 1.4s infinite;
+}
+.dark .shimmer::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.map-label {
+  paint-order: stroke;
+  stroke: var(--map-label-halo);
+  stroke-linejoin: round;
+  font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(16deg); }
+  40% { transform: rotate(-8deg); }
+  60% { transform: rotate(14deg); }
+  80% { transform: rotate(-4deg); }
+}

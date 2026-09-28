@@ -1,0 +1,47 @@
+{
+  "name": "chargeflow",
+  "private": true,
+  "version": "1.0.0",
+  "description": "ChargeFlow — Premium EV charging navigation & smart charging companion (demo).",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "tsx watch --clear-screen=false backend/server.ts",
+    "dev:web": "vite",
+    "build": "tsc --noEmit && vite build",
+    "start": "NODE_ENV=production tsx backend/server.ts",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=18.18"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "framer-motion": "^12.43.0",
+    "lucide-react": "^0.577.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwind-merge": "^3.7.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "concurrently": "^10.0.5",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "5.9",
+    "vite": "^7.3.6"
+  }
+}
