@@ -17,13 +17,13 @@ export function CompanionPrompt() {
   const walkTo = useJourney((s) => s.walkTo);
   const [aiText, setAiText] = useState<{ text: string; source: string } | null>(null);
 
-  // Ask the Python AI service once per session for its suggestion.
+  // Ask the AI service once per session for its suggestion.
   useEffect(() => {
     let alive = true;
     const ctx = buildChatContext();
     api
       .chat(`I have ${Math.round(ctx.chargingMinutesRemaining ?? 20)} minutes while my car charges. What should I do?`, ctx)
-      .then((r) => alive && r.source === 'python' && setAiText({ text: r.reply, source: 'Python' }))
+      .then((r) => alive && r.source === 'python' && setAiText({ text: r.reply, source: 'AI' }))
       .catch(() => undefined);
     return () => {
       alive = false;
@@ -56,7 +56,7 @@ export function CompanionPrompt() {
         >
           <div className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full bg-volt/30 blur-3xl" />
           <div className="relative flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.08em] opacity-80">
-            <Sparkles className="size-3.5" /> ChargeFlow AI {aiText && <span className="normal-case opacity-60">· {aiText.source}</span>}
+            <Sparkles className="size-3.5" /> ChargeFlow AI
           </div>
           <p className="relative mt-2 text-[14.5px] font-medium leading-relaxed">
             <Typewriter text={text} />

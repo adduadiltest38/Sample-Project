@@ -23,7 +23,6 @@ export function RouteOptions() {
   const select = useJourney((s) => s.selectRoute);
   const start = useJourney((s) => s.startNavigation);
   const cancel = useJourney((s) => s.cancelTrip);
-  const source = useJourney((s) => s.routesSource);
   const destNode = useJourney((s) => s.destinationNodeId);
 
   const ai = options.find((o) => o.tags.includes('ai')) ?? options[0];
@@ -37,7 +36,7 @@ export function RouteOptions() {
         <button onClick={cancel} className="-ml-1 flex items-center gap-1 rounded-xl px-1.5 py-1 text-sm font-semibold text-muted hover:bg-surface-2">
           <ArrowLeft className="size-4" /> Trip
         </button>
-        <Badge tone={source === 'api' ? 'route' : 'neutral'}>{source === 'api' ? '● Live API' : '● On-device'}</Badge>
+        <Badge tone="route">● Live data</Badge>
       </div>
       <div>
         <h2 className="text-[21px] font-bold leading-tight tracking-tight">Routes to {destinationLabel(destNode)}</h2>

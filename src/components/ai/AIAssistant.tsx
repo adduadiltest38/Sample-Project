@@ -41,7 +41,7 @@ export function AIFab({ className, compact }: { className?: string; compact?: bo
 export function AIChatPanel({ className, solid }: { className?: string; solid?: boolean }) {
   const open = useUi((s) => s.chatOpen);
   const setOpen = useUi((s) => s.setChatOpen);
-  const { messages, pending, send, status, apiOnline } = useChat();
+  const { messages, pending, send, status } = useChat();
   const [input, setInput] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +55,6 @@ export function AIChatPanel({ className, solid }: { className?: string; solid?: 
     setInput('');
   };
 
-  const providerLabel = apiOnline === false ? 'On-device engine' : status?.enabled ? 'Python AI service' : 'Local RecommendationEngine';
   const prompts = status?.prompts?.length ? status.prompts : aiQuickPrompts;
 
   return (
@@ -75,7 +74,7 @@ export function AIChatPanel({ className, solid }: { className?: string; solid?: 
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[15px] font-bold">ChargeFlow AI</div>
-              <div className="truncate text-[11.5px] text-muted">{providerLabel}</div>
+              <div className="truncate text-[11.5px] text-muted">Online · knows your trip</div>
             </div>
             <button onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-full hover:bg-surface-2" aria-label="Close chat">
               <X className="size-4" />
@@ -170,9 +169,6 @@ function Message({ m, latest }: { m: ChatMessage; latest: boolean }) {
           ))}
         </div>
       )}
-      <div className="px-1 text-[10.5px] text-muted">
-        {m.source === 'python' ? '🐍 Python AI service' : m.source === 'offline' ? 'On-device engine' : 'RecommendationEngine'}
-      </div>
     </motion.div>
   );
 }

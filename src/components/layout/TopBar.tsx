@@ -2,7 +2,6 @@ import { Moon, Sun, Timer } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUi } from '@/stores/uiStore';
 import { useJourney, effectiveTimeScale } from '@/stores/journeyStore';
-import { useChat } from '@/stores/chatStore';
 import { demoUser } from '@/mock/users';
 import { formatClock } from '@/utils/format';
 import { JourneyStepper } from './JourneyStepper';
@@ -62,8 +61,6 @@ export function ThemeToggle() {
 }
 
 export function TopBar() {
-  const status = useChat((s) => s.status);
-  const online = useChat((s) => s.apiOnline);
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-4 p-4">
       <div className="glass pointer-events-auto flex h-14 items-center rounded-[20px] pl-2 pr-5">
@@ -73,9 +70,9 @@ export function TopBar() {
         <JourneyStepper />
       </div>
       <div className="pointer-events-auto flex items-center gap-2">
-        <div className="glass hidden h-11 items-center gap-2 rounded-2xl px-3 text-[12px] font-semibold md:flex" title={status?.service ?? undefined}>
-          <span className={`size-2 rounded-full ${online === false ? 'bg-amber' : status?.enabled ? 'bg-volt' : 'bg-route'}`} />
-          {online === false ? 'AI · On-device' : status?.enabled ? 'AI · Python' : 'AI · Local engine'}
+        <div className="glass hidden h-11 items-center gap-2 rounded-2xl px-3 text-[12px] font-semibold md:flex">
+          <span className="size-2 rounded-full bg-volt" />
+          AI assistant
         </div>
         <ClockChip />
         <ThemeToggle />
