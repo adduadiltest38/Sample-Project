@@ -62,8 +62,8 @@ If Python isn't installed or the script isn't running, the backend answers with 
 | --- | --- | --- |
 | `API_PORT` | `8787` | Backend port |
 | `AI_SERVICE_PORT` | `8790` | Python AI port |
-
 | `AI_SERVICE_URL` | `http://localhost:8790` | Where the backend finds the Python AI |
+
 ---
 
 ## The demo script (≈ 3 minutes)
