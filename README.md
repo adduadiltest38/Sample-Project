@@ -66,6 +66,25 @@ If Python isn't installed or the script isn't running, the backend answers with 
 
 ---
 
+## Deploy to Vercel
+
+The repo is ready for Vercel as is, with nothing to configure:
+
+1. Go to [vercel.com/new](https://vercel.com/new) and import this GitHub repository.
+2. Keep the detected settings (they come from `vercel.json`) and click **Deploy**.
+
+What runs where on Vercel:
+
+| Part | On Vercel |
+| --- | --- |
+| The app | Static site built by `npm run build:vercel` |
+| AI chat | Python function `api/ai/chat.py`, using the same `ai-service/chargeflow_ai.py` |
+| Routes, charging, recommendations | Run in the browser with the shared engines, so no Node server is needed |
+
+The browser sends the trip data with each chat message, so the Python function needs no other backend. If the function is ever unreachable, the chat falls back to the built-in engine.
+
+---
+
 ## The demo script (≈ 3 minutes)
 
 1. **Dashboard:** Tesla Model 3 at **58%**, 245 km of range, heading to **Harbor Point**. The app flags *Charging required: Yes*, because today's plan (29 km plus a 215 km onward trip) would leave you below your 15% reserve.
@@ -99,6 +118,7 @@ Every control works from any state and does the transitions it needs. For exampl
 
 ```
 .
+├── api/ai/chat.py            Vercel Python function (wraps ai-service)
 ├── ai-service/               chargeflow_ai.py — Python AI service (stdlib only)
 ├── scripts/                  run-ai.mjs — starts the AI service with whichever Python is installed
 ├── backend/                  Express mock API (runs with tsx)

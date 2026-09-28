@@ -4,6 +4,10 @@ import { vehicleById } from '../mock/vehicles';
 import { companionCategories } from '../mock/recommendations';
 import { bestPick, explainPick, rankActivities } from './recommendationEngine';
 import { planRoutes } from './routePlanner';
+import { chargeEstimate } from './aiContext';
+import { travelSummary } from './routing';
+import { demoTrip } from '../mock/routes';
+import { demoUser } from '../mock/users';
 
 // ─────────────────────────────────────────────────────────────
 // Deterministic chat fallback. Detects intent with keywords and
@@ -14,6 +18,9 @@ export type ChatIntent =
   | { kind: 'activity'; tag: ActivityTag | 'all'; minutes?: number }
   | { kind: 'best-charger' }
   | { kind: 'car-status' }
+  | { kind: 'cost' }
+  | { kind: 'reach' }
+  | { kind: 'amenity'; want?: 'Restroom' | 'WiFi' }
   | { kind: 'help' };
 
 const TAG_WORDS: [ActivityTag, RegExp][] = [
@@ -30,6 +37,10 @@ const TAG_WORDS: [ActivityTag, RegExp][] = [
 export function detectIntent(message: string): ChatIntent {
   const m = message.toLowerCase();
   if (/(which|best|recommend|cheapest|fastest).*(charger|station|route)|charger.*best/.test(m)) return { kind: 'best-charger' };
+  if (/cost|price|how much|expensive|\bpay\b/.test(m)) return { kind: 'cost' };
+  if (/make it|reach|get to|enough (battery|charge|range)/.test(m)) return { kind: 'reach' };
+  if (/restroom|toilet|bathroom|\bwc\b|wifi|amenit/.test(m))
+    return { kind: 'amenity', want: /wifi/.test(m) ? 'WiFi' : /amenit/.test(m) ? undefined : 'Restroom' };
   if (/ready|battery|charged|how long|range|status|percent|%/.test(m) && !/\d+\s*min/.test(m)) return { kind: 'car-status' };
   const mins = m.match(/(\d{1,3})\s*(min|minute)/);
   for (const [tag, re] of TAG_WORDS) if (re.test(m)) return { kind: 'activity', tag, minutes: mins ? +mins[1] : undefined };
@@ -60,6 +71,48 @@ export function engineChat(message: string, ctx: ChatContext): ChatReply {
   const stationId = ctx.stationId ?? FEATURED_STATION_ID;
   const station = stationById(stationId)!;
   const window = ctx.chargingMinutesRemaining ?? 0;
+
+  if (intent.kind === 'cost') {
+    const est = chargeEstimate({ ...ctx, stationId });
+    if (!est) return { source: 'engine', reply: `💳 ${station.name} charges $${station.pricePerKwh.toFixed(2)} per kWh.`, suggestions: [] };
+    return {
+      source: 'engine',
+      reply: est.live
+        ? `💳 About $${est.cost.toFixed(2)} more to finish: ${est.energyKWh} kWh at $${est.pricePerKwh.toFixed(2)}/kWh, ${est.minutes} minutes left. No idle fee if you're back on time.`
+        : `💳 Charging at ${station.name} costs about $${est.cost.toFixed(2)}: ${est.energyKWh} kWh at $${est.pricePerKwh.toFixed(2)}/kWh, ${est.minutes} minutes. No idle fee if you're back on time.`,
+      suggestions: [],
+    };
+  }
+
+  if (intent.kind === 'reach') {
+    const trip = travelSummary(demoTrip.start.nodeId, demoTrip.destination.nodeId);
+    const tripKm = trip.meters / 1000;
+    const reserveKm = (ctx.rangeKm * demoUser.reservePercent) / Math.max(1, ctx.batteryPercent);
+    if (ctx.rangeKm - tripKm > reserveKm) {
+      return {
+        source: 'engine',
+        reply: `✅ Yes. ${demoTrip.destination.label} is ${Math.round(tripKm)} km away and you have about ${Math.round(ctx.rangeKm)} km of range. For the ${demoTrip.onwardKm} km onward trip you'll still want a charge stop.`,
+        suggestions: [],
+      };
+    }
+    return {
+      source: 'engine',
+      reply: `⚠️ It's tight. ${demoTrip.destination.label} is ${Math.round(tripKm)} km away and you have about ${Math.round(ctx.rangeKm)} km of range. Let's add a charging stop so you keep your reserve.`,
+      suggestions: [{ type: 'action', id: 'find-routes', label: 'Find best charging route', emoji: '✨' }],
+    };
+  }
+
+  if (intent.kind === 'amenity') {
+    const want = intent.want;
+    if (!want) return { source: 'engine', reply: `${station.name} has: ${station.amenities.join(', ')}.`, suggestions: [] };
+    return {
+      source: 'engine',
+      reply: station.amenities.includes(want)
+        ? `Yes, ${station.name} has a ${want === 'WiFi' ? 'WiFi' : 'restroom'} right next to the chargers.`
+        : `${station.name} doesn't list a ${want === 'WiFi' ? 'WiFi' : 'restroom'}. The nearest café usually does.`,
+      suggestions: [],
+    };
+  }
 
   if (intent.kind === 'car-status') {
     if (ctx.isCharging) {

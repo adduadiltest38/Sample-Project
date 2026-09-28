@@ -32,6 +32,9 @@ export const aiQuickPrompts = [
   'What can I do in 15 minutes?',
   'Which charger is best?',
   'Is my car ready?',
+  'How much will charging cost?',
+  'Can I make it to Harbor Point?',
+  'Is there a restroom?',
 ];
 
 /** Weights used by the deterministic RecommendationEngine. */

@@ -260,6 +260,14 @@ def handle_car_status(msg: str, ctx: dict) -> Reply:
 
 def handle_cost(msg: str, ctx: dict) -> Reply:
     s = ctx.get("station") or {}
+    est = ctx.get("chargeEstimate")
+    if est:
+        price = f"{est['energyKWh']} kWh at ${est['pricePerKwh']:.2f}/kWh"
+        if est.get("live"):
+            text = f"💳 About ${est['cost']:.2f} more to finish: {price}, {est['minutes']} minutes left."
+        else:
+            text = f"💳 Charging at {s.get('name', 'this station')} costs about ${est['cost']:.2f}: {price}, {est['minutes']} minutes."
+        return reply(text + " No idle fee if you're back on time.", "cost")
     options = ctx.get("routeOptions", [])
     chosen = next((o for o in options if o.get("stationId") == s.get("id")), None) or (options[0] if options else None)
     if chosen:

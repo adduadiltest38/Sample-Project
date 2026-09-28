@@ -11,6 +11,7 @@
     "dev:web": "vite",
     "build": "tsc --noEmit && vite build",
     "build:static": "VITE_STATIC_DEMO=1 vite build --base ./ --outDir dist-static",
+    "build:vercel": "VITE_CHAT_ONLY=1 vite build",
     "start": "concurrently --kill-others-on-fail -n ai,api -c yellow,cyan \"npm:dev:ai\" \"npm:start:api\"",
     "start:api": "NODE_ENV=production tsx backend/server.ts",
     "ai:demo": "node scripts/run-ai.mjs --demo",
