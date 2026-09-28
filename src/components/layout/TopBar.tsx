@@ -75,7 +75,7 @@ export function TopBar() {
       <div className="pointer-events-auto flex items-center gap-2">
         <div className="glass hidden h-11 items-center gap-2 rounded-2xl px-3 text-[12px] font-semibold md:flex" title={status?.model ?? undefined}>
           <span className={`size-2 rounded-full ${online === false ? 'bg-amber' : status?.enabled ? 'bg-volt' : 'bg-route'}`} />
-          {online === false ? 'Offline mode' : status?.enabled ? 'AI · OpenRouter' : 'AI · Local engine'}
+          {online === false ? 'AI · On-device' : status?.enabled ? 'AI · OpenRouter' : 'AI · Local engine'}
         </div>
         <ClockChip />
         <ThemeToggle />

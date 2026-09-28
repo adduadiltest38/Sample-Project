@@ -5,7 +5,11 @@ import type { ChargingSessionInfo, ChatContext, ChatReply, RouteOption } from '@
 
 const BASE = import.meta.env.VITE_API_BASE ?? '';
 
+/** Static builds (no backend) skip the network and use the on-device engines. */
+const STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === '1';
+
 async function request<T>(path: string, init?: RequestInit, timeoutMs = 6000): Promise<T> {
+  if (STATIC_DEMO) throw new Error('Static demo: no backend');
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {

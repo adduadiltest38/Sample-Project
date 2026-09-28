@@ -10,6 +10,7 @@
     "dev:web": "vite",
     "build": "tsc --noEmit && vite build",
     "start": "NODE_ENV=production tsx backend/server.ts",
+    "build:static": "VITE_STATIC_DEMO=1 vite build --base ./ --outDir dist-static",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
