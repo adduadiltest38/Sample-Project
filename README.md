@@ -21,31 +21,49 @@ npm run dev
 
 Open **http://localhost:5173**. That's it — no keys, no config.
 
-`npm run dev` starts both:
+`npm run dev` starts three processes:
 
 | Process | URL | What |
 | --- | --- | --- |
 | `web` (Vite + React) | http://localhost:5173 | The app (proxies `/api` to the backend) |
-| `api` (Express + tsx) | http://localhost:8787 | Mock REST API + AI service |
+| `api` (Express + tsx) | http://localhost:8787 | Mock REST API |
+| `ai` (Python 3) | http://localhost:8790 | ChargeFlow AI, which answers the chat |
 
-Other scripts: `npm run build` (typecheck + production build), `npm start` (serves the built app **and** the API from one port), `npm run typecheck`.
+Other scripts: `npm run build` (typecheck + production build), `npm start` (serves the built app, API and AI service), `npm run build:static` (a copy that runs in the browser with no servers), `npm run ai:demo` (prints the AI's answer to every predefined question), `npm run typecheck`.
 
-### Optional: richer AI with OpenRouter
+### The Python AI service
+
+The chat is answered by `ai-service/chargeflow_ai.py`, a small Python script that uses only the standard library, so there's nothing to `pip install`. It has 8 predefined questions (shown as chips in the chat) and understands close variations of them:
+
+| Question | What it uses |
+| --- | --- |
+| Find coffee nearby / Find food | Nearby places, walking time and the charging window |
+| What can I do in 15 minutes? | The time-fit formula for every place; suggests an in-car option if nothing fits |
+| Which charger is best? | Route options (fastest, cheapest, AI pick) |
+| Is my car ready? | Battery, charge target and minutes left |
+| How much will charging cost? | Energy added and the station's price per kWh |
+| Can I make it to Harbor Point? | Trip distance, range and your reserve |
+| Is there a restroom? | Station amenities |
+
+It also handles greetings, thanks, "help", and the other activity categories (relax, shopping, work, music, games, entertainment).
+
+With every message, the Node backend sends the live trip data: battery, charging minutes left, the current station, nearby places and route options. The Python script only decides what to say. Answers are deterministic, so the demo behaves the same every time.
+
+Try it on its own:
 
 ```bash
-cp .env.example .env
-# then set OPENROUTER_API_KEY (and optionally OPENROUTER_MODEL)
+python3 ai-service/chargeflow_ai.py --demo      # prints an answer for every predefined question
+python3 ai-service/chargeflow_ai.py             # serves POST /chat on :8790
 ```
+
+If Python isn't installed or the script isn't running, the backend answers with its TypeScript engine instead, so the chat keeps working. The top bar shows "AI · Python" or "AI · Local engine".
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `OPENROUTER_API_KEY` | _(empty)_ | Empty → the deterministic `RecommendationEngine` answers. |
-| `OPENROUTER_MODEL` | `anthropic/claude-sonnet-4.5` | Any OpenRouter model slug. |
-| `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | |
-| `API_PORT` | `8787` | |
+| `API_PORT` | `8787` | Backend port |
+| `AI_SERVICE_PORT` | `8790` | Python AI port |
 
-Only the backend reads the key; it is never sent to the browser. If OpenRouter errors, times out (12 s) or is unreachable, the backend falls back to the local engine per request, so the UI behaves the same either way. The top bar shows which provider is active.
-
+| `AI_SERVICE_URL` | `http://localhost:8790` | Where the backend finds the Python AI |
 ---
 
 ## The demo script (≈ 3 minutes)
@@ -81,6 +99,8 @@ Every control works from any state and does the transitions it needs. For exampl
 
 ```
 .
+├── ai-service/               chargeflow_ai.py — Python AI service (stdlib only)
+├── scripts/                  run-ai.mjs — starts the AI service with whichever Python is installed
 ├── backend/                  Express mock API (runs with tsx)
 │   ├── server.ts
 │   ├── routes/               stations · routes · charging · places · recommendations · ai
@@ -159,8 +179,8 @@ The map is original SVG with no tiles and no external map service. It includes:
 | GET | `/api/charging/:id` | replays the curve at 1 real s = 1 simulated min |
 | GET | `/api/places` | `?stationId=&category=` |
 | POST | `/api/recommendations` | `{ chargingMinutesRemaining, stationId, category?, preferences?, bufferMinutes? }` |
-| GET | `/api/ai/status` | |
-| POST | `/api/ai/chat` | `{ message, context }` |
+| GET | `/api/ai/status` | which AI is answering + the predefined questions |
+| POST | `/api/ai/chat` | `{ message, context }` → forwarded to the Python AI |
 
 ```bash
 curl -X POST localhost:8787/api/recommendations -H 'content-type: application/json' \

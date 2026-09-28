@@ -55,7 +55,8 @@ export function AIChatPanel({ className }: { className?: string }) {
     setInput('');
   };
 
-  const providerLabel = apiOnline === false ? 'On-device engine' : status?.enabled ? `OpenRouter · ${status.model}` : 'Local RecommendationEngine';
+  const providerLabel = apiOnline === false ? 'On-device engine' : status?.enabled ? 'Python AI service' : 'Local RecommendationEngine';
+  const prompts = status?.prompts?.length ? status.prompts : aiQuickPrompts;
 
   return (
     <AnimatePresence>
@@ -87,7 +88,7 @@ export function AIChatPanel({ className }: { className?: string }) {
                 <div className="text-[22px] font-bold tracking-tight">How can I help?</div>
                 <p className="mt-1 text-[13px] text-muted">I know your battery, your route and what’s around every charger.</p>
                 <div className="mt-4 space-y-2">
-                  {aiQuickPrompts.map((p, i) => (
+                  {prompts.map((p, i) => (
                     <motion.button
                       key={p}
                       initial={{ opacity: 0, x: -8 }}
@@ -117,7 +118,7 @@ export function AIChatPanel({ className }: { className?: string }) {
 
           {messages.length > 0 && (
             <div className="no-scrollbar flex gap-1.5 overflow-x-auto px-4 pb-2">
-              {aiQuickPrompts.map((p) => (
+              {prompts.map((p) => (
                 <button key={p} onClick={() => submit(p)} className="shrink-0 rounded-full bg-surface-2 px-3 py-1.5 text-[12px] font-medium hover:bg-surface-3">
                   {p}
                 </button>
@@ -170,7 +171,7 @@ function Message({ m, latest }: { m: ChatMessage; latest: boolean }) {
         </div>
       )}
       <div className="px-1 text-[10.5px] text-muted">
-        {m.source === 'openrouter' ? `✨ ${m.model ?? 'OpenRouter'}` : m.source === 'offline' ? 'On-device engine' : 'RecommendationEngine'}
+        {m.source === 'python' ? '🐍 Python AI service' : m.source === 'offline' ? 'On-device engine' : 'RecommendationEngine'}
       </div>
     </motion.div>
   );

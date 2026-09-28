@@ -280,8 +280,7 @@ export interface ChatSuggestion {
 
 export interface ChatReply {
   reply: string;
-  source: 'openrouter' | 'engine';
-  model?: string;
+  source: 'python' | 'engine';
   suggestions: ChatSuggestion[];
 }
 

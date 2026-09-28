@@ -1,142 +1,156 @@
-import type { ChatContext, ChatReply } from '../../src/types';
-import { engineChat, detectIntent } from '../../src/lib/chatEngine';
-import { rankActivities } from '../../src/lib/recommendationEngine';
+import type { ChatContext, ChatReply, ChatSuggestion } from '../../src/types';
+import { engineChat } from '../../src/lib/chatEngine';
+import { isOpenAt, walkFor } from '../../src/lib/recommendationEngine';
 import { planRoutes } from '../../src/lib/routePlanner';
-import { placeById, stationById, vehicleById, FEATURED_STATION_ID } from '../mock';
+import { travelSummary } from '../../src/lib/routing';
+import {
+  aiQuickPrompts,
+  demoTrip,
+  demoUser,
+  FEATURED_STATION_ID,
+  inCarActivities,
+  placesNearStation,
+  stationById,
+  vehicleById,
+} from '../mock';
 import { env } from '../utils/env';
 import { log } from '../utils/http';
 
 // ─────────────────────────────────────────────────────────────
 // AIRecommendationService
-// • With OPENROUTER_API_KEY → OpenRouter writes the reply, grounded
-//   in structured data computed by the deterministic engine.
-// • Without it (or on any failure) → RecommendationEngine replies.
-// Suggestions (tappable cards) always come from the engine, so the
-// UI behaves identically in both modes.
+// Replies come from the Python AI service (ai-service/chargeflow_ai.py),
+// which answers predefined questions using the trip data sent here.
+// If the Python service isn't running, the TypeScript engine answers
+// instead, so the chat never breaks.
 // ─────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are ChargeFlow AI, the in-car assistant of a premium EV navigation app in the fictional Nova City.
-You help drivers pick charging stations and make the most of their charging time.
-Rules:
-- Use ONLY the JSON data provided. Never invent places, stations, prices or times.
-- Respect the time maths: an activity fits only if walk there + activity + walk back + safety buffer <= charging minutes remaining.
-- Be warm, concise and confident: at most 3 short sentences (under 70 words). One emoji at the start is welcome.
-- Recommend one clear best option first, then optionally one alternative.
-- No markdown headings, no bullet lists.`;
+const TIMEOUT_MS = 4000;
+const HEALTH_TTL_MS = 5000;
 
-const TIMEOUT_MS = 12_000;
+interface PythonReply {
+  reply: string;
+  intent: string;
+  suggestions: ChatSuggestion[];
+}
 
 export class AIRecommendationService {
-  get enabled() {
-    return Boolean(env.openRouter.apiKey);
-  }
+  private online = false;
+  private checkedAt = 0;
+  private prompts: string[] = aiQuickPrompts;
 
-  get model() {
-    return env.openRouter.model;
-  }
-
-  status() {
-    return { enabled: this.enabled, provider: this.enabled ? 'openrouter' : 'engine', model: this.enabled ? this.model : null };
-  }
-
-  async chat(message: string, context: ChatContext): Promise<ChatReply> {
-    const fallback = engineChat(message, context);
-    if (!this.enabled) return fallback;
-
+  /** Pings the Python service (cached for a few seconds). */
+  async refresh() {
+    if (Date.now() - this.checkedAt < HEALTH_TTL_MS) return;
+    this.checkedAt = Date.now();
     try {
-      const grounding = this.buildGrounding(message, context);
-      const reply = await this.callOpenRouter([
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: `Driver message: "${message}"\n\nStructured context (JSON):\n${JSON.stringify(grounding, null, 1)}\n\nThe app's deterministic engine suggests: "${fallback.reply}". Write the reply for the driver.`,
-        },
-      ]);
-      if (!reply) return fallback;
-      return { reply, source: 'openrouter', model: this.model, suggestions: fallback.suggestions };
-    } catch (err) {
-      log('OpenRouter unavailable, using RecommendationEngine:', (err as Error).message);
-      return fallback;
+      const res = await this.call<{ prompts: string[] }>('/prompts');
+      this.online = true;
+      if (res.prompts?.length) this.prompts = res.prompts;
+    } catch {
+      if (this.online) log('AI: Python service went offline — using the TypeScript engine');
+      this.online = false;
     }
   }
 
-  /** Mirrors the spec payload: chargingMinutesRemaining, walkingTime, nearbyPlaces, userPreferences. */
-  private buildGrounding(message: string, ctx: ChatContext) {
-    const intent = detectIntent(message);
+  async status() {
+    await this.refresh();
+    return {
+      enabled: this.online,
+      provider: this.online ? ('python' as const) : ('engine' as const),
+      service: this.online ? env.aiServiceUrl : null,
+      prompts: this.prompts,
+    };
+  }
+
+  async chat(message: string, context: ChatContext): Promise<ChatReply> {
+    try {
+      const r = await this.call<PythonReply>('/chat', { message, context: this.buildContext(context) });
+      this.online = true;
+      return { reply: r.reply, source: 'python', suggestions: r.suggestions ?? [] };
+    } catch (err) {
+      if (this.online) log('AI: Python service unavailable, using the TypeScript engine:', (err as Error).message);
+      this.online = false;
+      return engineChat(message, context);
+    }
+  }
+
+  /** Everything the Python service needs to answer about this trip. */
+  private buildContext(ctx: ChatContext) {
     const vehicle = vehicleById(ctx.vehicleId);
     const stationId = ctx.stationId ?? FEATURED_STATION_ID;
     const station = stationById(stationId)!;
-    const minutes =
-      intent.kind === 'activity' && intent.minutes ? intent.minutes : Math.round(ctx.chargingMinutesRemaining ?? 20);
+    const hour = ctx.clockHour ?? 14;
+    const routes = planRoutes({ vehicle, batteryPercent: ctx.batteryPercent });
+    const trip = travelSummary(demoTrip.start.nodeId, demoTrip.destination.nodeId);
 
-    const ranked = rankActivities({
-      chargingMinutesRemaining: minutes,
-      stationId,
-      category: intent.kind === 'activity' ? intent.tag : 'all',
-      preferences: ctx.preferences,
-      clockHour: ctx.clockHour,
-    }).slice(0, 6);
-
-    const base = {
+    return {
+      userName: demoUser.name,
       journeyState: ctx.journeyState,
-      vehicle: { name: vehicle.name, batteryPercent: Math.round(ctx.batteryPercent), rangeKm: Math.round(ctx.rangeKm) },
       isCharging: Boolean(ctx.isCharging),
-      chargingMinutesRemaining: minutes,
-      chargeTargetPercent: ctx.chargeTargetPercent ?? 80,
-      userPreferences: ctx.preferences ?? [],
-      station: { name: station.name, powerKW: station.powerKW, available: `${station.availableChargers}/${station.chargers}`, amenities: station.amenities },
-      nearbyPlaces: ranked.map((r) => {
-        const p = r.kind === 'place' ? placeById(r.id) : undefined;
+      chargingMinutesRemaining: ctx.chargingMinutesRemaining ?? null,
+      chargeTargetPercent: ctx.chargeTargetPercent ?? demoUser.chargeTargetPercent,
+      bufferMinutes: demoUser.safetyBufferMinutes,
+      reservePercent: demoUser.reservePercent,
+      preferences: ctx.preferences ?? demoUser.preferences,
+      destination: demoTrip.destination.label,
+      tripKm: +(trip.meters / 1000).toFixed(1),
+      onwardKm: demoTrip.onwardKm,
+      vehicle: { name: vehicle.name, batteryPercent: ctx.batteryPercent, rangeKm: ctx.rangeKm },
+      station: {
+        id: station.id,
+        name: station.name,
+        powerKW: station.powerKW,
+        pricePerKwh: station.pricePerKwh,
+        amenities: station.amenities,
+      },
+      places: placesNearStation(stationId).map((p) => {
+        const walk = walkFor(stationId, p);
         return {
-          name: r.name,
-          type: r.category,
-          rating: r.rating,
-          walkingTime: r.fit.walkMinutes,
-          activityMinutes: r.fit.activityMinutes,
-          safetyBuffer: r.fit.bufferMinutes,
-          fits: r.fit.status,
-          blurb: p?.blurb,
+          id: p.id,
+          name: p.name,
+          emoji: p.emoji,
+          category: p.category,
+          tags: p.tags,
+          rating: p.rating,
+          walkMinutes: walk.minutes,
+          walkMeters: walk.meters,
+          visitMinutes: p.visitMinutes,
+          minVisitMinutes: p.minVisitMinutes,
+          open: isOpenAt(p, hour),
         };
       }),
-    };
-
-    if (intent.kind === 'best-charger') {
-      const routes = planRoutes({ vehicle, batteryPercent: ctx.batteryPercent });
-      return {
-        ...base,
-        routeOptions: routes.map((o) => ({
-          station: stationById(o.stationId)!.name,
+      inCar: inCarActivities.map((a) => ({ id: a.id, name: a.name, emoji: a.emoji, tags: a.tags })),
+      routeOptions: routes.map((o) => {
+        const s = stationById(o.stationId)!;
+        return {
+          stationId: o.stationId,
+          station: s.name,
           tags: o.tags,
-          driveMinutes: o.driveMinutes,
+          powerKW: s.powerKW,
+          available: `${s.availableChargers}/${s.chargers}`,
+          pricePerKwh: s.pricePerKwh,
+          energyKWh: o.energyAddedKWh,
           chargeMinutes: o.chargeMinutes,
           totalMinutes: o.totalMinutes,
           chargingCost: o.chargingCost,
           reasons: o.reasons,
-        })),
-      };
-    }
-    return base;
+        };
+      }),
+    };
   }
 
-  private async callOpenRouter(messages: { role: string; content: string }[]): Promise<string | null> {
+  private async call<T>(path: string, body?: unknown): Promise<T> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      const res = await fetch(`${env.openRouter.baseUrl}/chat/completions`, {
-        method: 'POST',
+      const res = await fetch(`${env.aiServiceUrl}${path}`, {
+        method: body ? 'POST' : 'GET',
         signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${env.openRouter.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:5173',
-          'X-Title': 'ChargeFlow Demo',
-        },
-        body: JSON.stringify({ model: this.model, messages, temperature: 0.5, max_tokens: 220 }),
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
-      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const text = data.choices?.[0]?.message?.content?.trim();
-      return text || null;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()) as T;
     } finally {
       clearTimeout(timer);
     }

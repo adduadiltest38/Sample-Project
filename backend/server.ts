@@ -17,8 +17,8 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '100kb' }));
 
-app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, name: 'ChargeFlow API', ai: aiService.status(), time: new Date().toISOString() });
+app.get('/api/health', async (_req, res) => {
+  res.json({ ok: true, name: 'ChargeFlow API', ai: await aiService.status(), time: new Date().toISOString() });
 });
 
 app.use('/api/stations', stationsRouter);
@@ -42,9 +42,9 @@ app.use(errorHandler);
 
 app.listen(env.port, () => {
   log(`API ready on http://localhost:${env.port}`);
-  log(
-    aiService.enabled
-      ? `AI: OpenRouter enabled (model ${aiService.model})`
-      : 'AI: OpenRouter not configured — using the local RecommendationEngine',
-  );
+  // Give the Python AI service a moment to boot, then report which brain answers.
+  setTimeout(async () => {
+    const s = await aiService.status();
+    log(s.enabled ? `AI: Python service connected at ${s.service}` : 'AI: Python service not running — the TypeScript engine will answer');
+  }, 1500);
 });

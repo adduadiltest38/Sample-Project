@@ -30,8 +30,9 @@ const post = <T>(path: string, body: unknown, timeoutMs?: number) =>
 
 export interface AiStatus {
   enabled: boolean;
-  provider: 'openrouter' | 'engine';
-  model: string | null;
+  provider: 'python' | 'engine';
+  service: string | null;
+  prompts?: string[];
 }
 
 export const api = {

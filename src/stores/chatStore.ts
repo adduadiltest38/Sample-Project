@@ -9,8 +9,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   suggestions?: ChatSuggestion[];
-  source?: 'openrouter' | 'engine' | 'offline';
-  model?: string;
+  source?: 'python' | 'engine' | 'offline';
 }
 
 interface ChatStore {
@@ -36,7 +35,7 @@ export const useChat = create<ChatStore>((set, get) => ({
       const h = await api.health();
       set({ status: h.ai, apiOnline: true });
     } catch {
-      set({ status: { enabled: false, provider: 'engine', model: null }, apiOnline: false });
+      set({ status: { enabled: false, provider: 'engine', service: null }, apiOnline: false });
     }
   },
 
@@ -49,7 +48,7 @@ export const useChat = create<ChatStore>((set, get) => ({
     let reply: ChatMessage;
     try {
       const r = await api.chat(msg, ctx);
-      reply = { id: id++, role: 'assistant', text: r.reply, suggestions: r.suggestions, source: r.source, model: r.model };
+      reply = { id: id++, role: 'assistant', text: r.reply, suggestions: r.suggestions, source: r.source };
     } catch {
       // Backend unreachable — answer on-device with the same deterministic engine.
       const r = engineChat(msg, ctx);

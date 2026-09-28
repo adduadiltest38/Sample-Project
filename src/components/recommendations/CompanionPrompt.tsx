@@ -17,13 +17,13 @@ export function CompanionPrompt() {
   const walkTo = useJourney((s) => s.walkTo);
   const [aiText, setAiText] = useState<{ text: string; source: string } | null>(null);
 
-  // Ask the AI service once per session for a richer suggestion (OpenRouter if configured).
+  // Ask the Python AI service once per session for its suggestion.
   useEffect(() => {
     let alive = true;
     const ctx = buildChatContext();
     api
       .chat(`I have ${Math.round(ctx.chargingMinutesRemaining ?? 20)} minutes while my car charges. What should I do?`, ctx)
-      .then((r) => alive && r.source === 'openrouter' && setAiText({ text: r.reply, source: r.model ?? 'AI' }))
+      .then((r) => alive && r.source === 'python' && setAiText({ text: r.reply, source: 'Python' }))
       .catch(() => undefined);
     return () => {
       alive = false;

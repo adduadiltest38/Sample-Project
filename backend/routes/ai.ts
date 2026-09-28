@@ -5,9 +5,9 @@ import { HttpError } from '../utils/http';
 
 export const aiRouter = Router();
 
-// GET /api/ai/status → which provider is active (never exposes the key)
-aiRouter.get('/status', (_req, res) => {
-  res.json(aiService.status());
+// GET /api/ai/status → which AI answers (Python service or TS engine) + quick prompts
+aiRouter.get('/status', async (_req, res) => {
+  res.json(await aiService.status());
 });
 
 // POST /api/ai/chat { message, context }
