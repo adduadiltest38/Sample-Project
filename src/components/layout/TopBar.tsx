@@ -23,7 +23,7 @@ export function Logo({ compact }: { compact?: boolean }) {
         </svg>
       </div>
       <div className="leading-tight">
-        <div className="text-[17px] font-extrabold tracking-tight">ChargeFlow</div>
+        <div className={compact ? 'text-[17px] font-extrabold tracking-tight max-[379px]:hidden' : 'text-[17px] font-extrabold tracking-tight'}>ChargeFlow</div>
         {!compact && <div className="text-[11px] font-medium text-muted">Charge your car. Make the most of your time.</div>}
       </div>
     </div>

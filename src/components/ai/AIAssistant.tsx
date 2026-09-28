@@ -38,7 +38,7 @@ export function AIFab({ className, compact }: { className?: string; compact?: bo
 }
 
 /** The chat panel itself. */
-export function AIChatPanel({ className }: { className?: string }) {
+export function AIChatPanel({ className, solid }: { className?: string; solid?: boolean }) {
   const open = useUi((s) => s.chatOpen);
   const setOpen = useUi((s) => s.setChatOpen);
   const { messages, pending, send, status, apiOnline } = useChat();
@@ -66,7 +66,7 @@ export function AIChatPanel({ className }: { className?: string }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-          className={cn('glass pointer-events-auto flex flex-col overflow-hidden rounded-[28px]', className)}
+          className={cn(solid ? 'card' : 'glass', 'pointer-events-auto flex flex-col overflow-hidden rounded-[28px]', className)}
         >
           <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
             <div className="relative grid size-10 place-items-center rounded-2xl bg-inverse">
@@ -137,7 +137,7 @@ export function AIChatPanel({ className }: { className?: string }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about chargers, time, food…"
-              className="h-11 min-w-0 flex-1 rounded-2xl bg-surface-2 px-4 text-[14px] outline-none placeholder:text-muted focus:ring-2 focus:ring-volt/50"
+              className="h-11 min-w-0 flex-1 rounded-2xl bg-surface-2 px-4 text-[16px] outline-none lg:text-[14px] placeholder:text-muted focus:ring-2 focus:ring-volt/50"
             />
             <motion.button whileTap={{ scale: 0.9 }} type="submit" disabled={!input.trim() || pending} className="grid size-11 place-items-center rounded-2xl bg-inverse text-on-inverse disabled:opacity-30" aria-label="Send">
               <ArrowUp className="size-4.5" />

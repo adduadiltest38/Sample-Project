@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useAnimationControls, type PanInfo } from 'framer-motion';
+import { cn } from '@/utils/cn';
 
 interface Props {
   children: React.ReactNode;
@@ -8,10 +9,13 @@ interface Props {
   snapIndex: number;
   onSnapChange: (i: number) => void;
   onHeightChange?: (h: number) => void;
+  className?: string;
+  /** Fixed width (tablets); full width when omitted. */
+  width?: number;
 }
 
 /** Draggable mobile bottom sheet with snap points. */
-export function Sheet({ children, snaps, snapIndex, onSnapChange, onHeightChange }: Props) {
+export function Sheet({ children, snaps, snapIndex, onSnapChange, onHeightChange, className, width }: Props) {
   const controls = useAnimationControls();
   const maxH = snaps[snaps.length - 1];
   const [vh, setVh] = useState(() => window.innerHeight);
@@ -41,8 +45,8 @@ export function Sheet({ children, snaps, snapIndex, onSnapChange, onHeightChange
 
   return (
     <motion.div
-      className="glass pointer-events-auto absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[28px] pb-[env(safe-area-inset-bottom)]"
-      style={{ height: Math.min(maxH, vh - 8) }}
+      className={cn('glass pointer-events-auto absolute inset-x-0 bottom-0 z-30 flex flex-col rounded-t-[28px] pb-[env(safe-area-inset-bottom)]', className)}
+      style={{ height: Math.min(maxH, vh - 8), width }}
       initial={{ y: maxH }}
       animate={controls}
       drag="y"
@@ -51,10 +55,13 @@ export function Sheet({ children, snaps, snapIndex, onSnapChange, onHeightChange
       dragMomentum={false}
       onDragEnd={onDragEnd}
     >
-      <div className="flex shrink-0 cursor-grab justify-center pb-1 pt-2.5 active:cursor-grabbing">
+      <div
+        className="flex shrink-0 cursor-grab justify-center pb-1 pt-2.5 active:cursor-grabbing"
+        onClick={() => onSnapChange(snapIndex === snaps.length - 1 ? 1 : snapIndex + 1)}
+      >
         <div className="h-1.5 w-11 rounded-full bg-ink/15" />
       </div>
-      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6" onPointerDownCapture={(e) => e.stopPropagation()}>
+      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-6" onPointerDownCapture={(e) => e.stopPropagation()}>
         {children}
       </div>
     </motion.div>
